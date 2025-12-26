@@ -151,11 +151,34 @@ camera.position.<span class="function">set</span>(<span class="number">0</span>,
 camera.<span class="function">lookAt</span>(<span class="number">0</span>, <span class="number">0.2</span>, <span class="number">0</span>);
 
 <span class="comment">// GVRM</span>
-<span class="keyword">const</span> gvrm = <span class="keyword">await</span> GVRM.<span class="function">load</span>(<span class="string">'./author.gvrm'</span>, scene, camera, renderer);  <span class="comment">// 1/3</span>
-<span class="keyword">await</span> gvrm.<span class="function">changeFBX</span>(<span class="string">'./Idle.fbx'</span>);  <span class="comment">// 2/3</span>
+<span class="keyword">const</span> targetPath = <span class="string">'./target.gvrm'</span>;
+<span class="keyword">const</span> idlePath = <span class="string">'./Idle.fbx'</span>;
+<span class="keyword">const</span> avatarCount = <span class="number">10</span>;
+<span class="keyword">const</span> spawnRadius = <span class="number">1.2</span>;
+<span class="keyword">const</span> gvrms = [];
+
+<span class="keyword">const</span> randomSpawn = () => {
+  <span class="keyword">const</span> angle = Math.<span class="function">random</span>() * Math.<span class="function">PI</span> * <span class="number">2</span>;
+  <span class="keyword">const</span> radius = Math.<span class="function">sqrt</span>(Math.<span class="function">random</span>()) * spawnRadius;
+  <span class="keyword">return</span> { x: Math.<span class="function">cos</span>(angle) * radius, z: Math.<span class="function">sin</span>(angle) * radius };
+};
+
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; avatarCount; i++) {
+  <span class="keyword">const</span> container = <span class="keyword">new</span> THREE.<span class="function">Group</span>();
+  scene.<span class="function">add</span>(container);
+
+  <span class="keyword">const</span> gvrm = <span class="keyword">await</span> GVRM.<span class="function">load</span>(targetPath, container, camera, renderer);  <span class="comment">// 1/3</span>
+  <span class="keyword">await</span> gvrm.<span class="function">changeFBX</span>(idlePath);  <span class="comment">// 2/3</span>
+
+  <span class="keyword">const</span> spawn = <span class="function">randomSpawn</span>();
+  container.position.<span class="function">set</span>(spawn.x, <span class="number">0</span>, spawn.z);
+  container.rotation.y = Math.<span class="function">random</span>() * Math.<span class="function">PI</span> * <span class="number">2</span>;
+
+  gvrms.<span class="function">push</span>(gvrm);
+}
 
 renderer.<span class="function">setAnimationLoop</span>(() => {
-  gvrm.<span class="function">update</span>();  <span class="comment">// 3/3</span>
+  gvrms.<span class="function">forEach</span>((gvrm) => gvrm.<span class="function">update</span>());  <span class="comment">// 3/3</span>
   renderer.<span class="function">render</span>(scene, camera);
 });</pre>
     </div>
@@ -220,8 +243,31 @@ renderer.<span class="function">setAnimationLoop</span>(() => {
       controls.update();
 
       // GVRM
-      const gvrm = await GVRM.load('./author.gvrm', scene, camera, renderer);  // 1/3
-      await gvrm.changeFBX('./Idle.fbx');  // 2/3
+      const targetPath = './target.gvrm';
+      const idlePath = './Idle.fbx';
+      const avatarCount = 10;
+      const spawnRadius = 1.2;
+      const gvrms = [];
+
+      const randomSpawn = () => {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.sqrt(Math.random()) * spawnRadius;
+        return { x: Math.cos(angle) * radius, z: Math.sin(angle) * radius };
+      };
+
+      for (let i = 0; i < avatarCount; i++) {
+        const container = new THREE.Group();
+        scene.add(container);
+
+        const gvrm = await GVRM.load(targetPath, container, camera, renderer);  // 1/3
+        await gvrm.changeFBX(idlePath);  // 2/3
+
+        const spawn = randomSpawn();
+        container.position.set(spawn.x, 0, spawn.z);
+        container.rotation.y = Math.random() * Math.PI * 2;
+
+        gvrms.push(gvrm);
+      }
 
       // Hide loading
       if (dotsInterval) {
@@ -258,7 +304,7 @@ renderer.<span class="function">setAnimationLoop</span>(() => {
           lastFrameTime = currentTime - (deltaTime % frameInterval);
 
           controls.update();  // Update controls
-          gvrm.update();  // 3/3
+          gvrms.forEach((gvrm) => gvrm.update());  // 3/3
           renderer.render(scene, camera);
         }
       });
